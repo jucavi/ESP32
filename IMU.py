@@ -1145,18 +1145,21 @@ class MPU6050():
     # SIGNAL_PATH_RESET
     def gyro_path_reset(self):
         """1 resets the gyroscope analog and digital signal paths."""
+        self.reset_flag = True
         return self.write_bit(MPU6050_RA_SIGNAL_PATH_RESET,
                               MPU6050_PATHRESET_GYRO_RESET_BIT,
                               True)
 
     def accel_path_reset(self):
         """1 resets the accelerometer analog and digital signal paths."""
+        self.reset_flag = True
         return self.write_bit(MPU6050_RA_SIGNAL_PATH_RESET,
                               MPU6050_PATHRESET_ACCEL_RESET_BIT,
                               True)
 
     def temperature_path_reset(self):
         """1 resets the temperature sensor analog and digital signal paths."""
+        self.reset_flag = True
         return self.write_bit(MPU6050_RA_SIGNAL_PATH_RESET,
                               MPU6050_PATHRESET_TEMP_RESET_BIT,
                               True)
@@ -1228,6 +1231,7 @@ class MPU6050():
         This bit resets the I2C Master when set to 1 while I2C_MST_EN equals 0.
         This bit automatically clears to 0 after the reset has been triggered.
         """
+        self.reset_flag = True
         return self.write_bit(MPU6050_RA_USER_CTRL,
                               MPU6050_USERCTRL_I2C_MST_RESET_BIT,
                               True)
@@ -1244,6 +1248,7 @@ class MPU6050():
         When resetting only the signal path (and not the sensor registers),
         please use Register 104, SIGNAL_PATH_RESET.
         """
+        self.reset_flag = True
         return self.write_bit(MPU6050_RA_USER_CTRL,
                               MPU6050_USERCTRL_SIG_COND_RESET_BIT,
                               True)
