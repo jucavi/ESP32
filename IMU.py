@@ -1602,10 +1602,10 @@ class MPU6050():
         self.set_sleep_enabled(False)
         self.set_cycle_enabled(False)
 
-    def packet_count(self):
+    def fifo_count(self):
         """Gyro and Accel data for averaging."""
         count = self.get_fifo_count()
-        return (self.bytes_toint(count[0], count[1]) / 12)
+        return self.bytes_toint(count[0], count[1])
 
     def initialize(self,
                    clk_sel=MPU6050_CLOCK_PLL_XGYRO,
