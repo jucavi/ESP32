@@ -28,6 +28,7 @@ THE SOFTWARE.
 =============================================
 """
 from machine import I2C, Pin
+from utime import sleep_ms
 
 MPU6050_ADDRESS_AD0_LOW  = 0x68  # address pin low (GND)
 MPU6050_ADDRESS_AD0_HIGH = 0x69  # address pin high (VCC)
@@ -1614,8 +1615,9 @@ class MPU6050():
                    fs_accel=MPU6050_ACCEL_FS_2):
         """Prepare for general usage."""
         self.device_reset()
+        sleep_ms(100)
 
-        self.set_sleep_enabled(False)
+        self.disable_sleep()
         self.set_clock_source(clk_sel)
         self.set_dlpf_mode(dlpf_cfg)
         # Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
