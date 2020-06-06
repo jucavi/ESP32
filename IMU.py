@@ -1604,7 +1604,7 @@ class MPU6050():
         self.set_cycle_enabled(False)
 
     def fifo_count(self):
-        """Gyro and Accel data for averaging."""
+        """FIFO count."""
         count = self.get_fifo_count()
         return self.bytes_toint(count[0], count[1])
 
