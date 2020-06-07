@@ -29,6 +29,7 @@ THE SOFTWARE.
 """
 from machine import I2C, Pin
 from utime import sleep_ms
+from math import atan, pi, pow, sqrt
 
 MPU6050_ADDRESS_AD0_LOW  = 0x68  # address pin low (GND)
 MPU6050_ADDRESS_AD0_HIGH = 0x69  # address pin high (VCC)
@@ -1086,12 +1087,12 @@ class MPU6050():
     def accel_y(self):
         """Get Y-axis accelerometer reading."""
         buff = self.read_bytes(MPU6050_RA_ACCEL_YOUT_H, 2)
-        return self.bytes_toint(buff[2], buff[3])
+        return self.bytes_toint(buff[0], buff[1])
 
     def accel_z(self):
         """Get Z-axis accelerometer reading."""
         buff = self.read_bytes(MPU6050_RA_ACCEL_ZOUT_H, 2)
-        return self.bytes_toint(buff[4], buff[5])
+        return self.bytes_toint(buff[0], buff[1])
 
     # Temperature Measurement
     def temperature(self):
@@ -1130,12 +1131,12 @@ class MPU6050():
     def gyro_y(self):
         """Get Y-axis gyroscope reading."""
         buff = self.read_bytes(MPU6050_RA_GYRO_YOUT_H, 2)
-        return self.bytes_toint(buff[2], buff[3])
+        return self.bytes_toint(buff[0], buff[1])
 
     def gyro_z(self):
         """Get Z-axis gyroscope reading."""
         buff = self.read_bytes(MPU6050_RA_GYRO_ZOUT_H, 2)
-        return self.bytes_toint(buff[4], buff[5])
+        return self.bytes_toint(buff[0], buff[1])
 
     # EXT_SENS_DATA_00 through EXT_SENS_DATA_23
     # I2C_SLV0_DO
@@ -1578,12 +1579,18 @@ class MPU6050():
         """Read single byte from an 8-bit device register."""
         return self.i2c.readfrom_mem(self.address, register, length)
 
-    # Helper
+    # Helpers
     def bytes_toint(self, msb, lsb):
         """Convert two bytes to signed integer."""
         if not msb & 0x80:
             return msb << 8 | lsb
         return - (((msb ^ 255) << 8) | (lsb ^ 255) + 1)
+
+    def unit_converter(self, raw_value, sensitivity):
+        """Helper for unit converter."""
+        if isinstance(raw_value, tuple):
+            return tuple(v / sensitivity for v in raw_value)
+        return raw_value / sensitivity
 
     # Methods
     def test_connection(self):
@@ -1608,6 +1615,18 @@ class MPU6050():
         count = self.get_fifo_count()
         return self.bytes_toint(count[0], count[1])
 
+    def accel_in_g(self, raw_value):
+        """Acceleration in `g` unit."""
+        sensitivity = {0: 16384, 1: 8192, 2: 4096, 3: 2048}
+        full_scale = self.get_full_scale_accel_range()
+        return self.unit_converter(raw_value, sensitivity[full_scale])
+
+    def gyro_in_deg(self, raw_value):
+        """Gyroscope in `deg` unit."""
+        sensitivity = {0: 250, 1: 500, 2: 1000, 3: 2000}
+        full_scale = self.get_full_scale_gyro_range()
+        return self.unit_converter(raw_value, sensitivity[full_scale])
+
     def initialize(self,
                    clk_sel=MPU6050_CLOCK_PLL_XGYRO,
                    dlpf_cfg=MPU6050_DLPF_BW_42,
@@ -1628,3 +1647,33 @@ class MPU6050():
         self.set_latch_interrupt(True)
         self.set_i2c_bypass_enabled(True)
         self.set_data_ready_interrupt_enabled(True)
+
+    def imu_error(self):
+        """Calculate Accelerometer and Gyro data error."""
+        iter_times = 200
+        accel_x_error = 0
+        accel_y_error = 0
+        gyro_x_error = 0
+        gyro_y_error = 0
+        gyro_z_error = 0
+
+        for _ in range(iter_times):
+            accx, accy, accz = self.accel()
+
+            accel_x_error += ((atan((accy) / sqrt(pow((accx), 2) + pow((accz), 2))) * 180 / pi))
+            accel_y_error += ((atan(-1 * (accx) / sqrt(pow((accy), 2) + pow((accz), 2))) * 180 / pi))
+
+        for _ in range(iter_times):
+            gyrox, gyroy, gyroz = self.gyro()
+
+            gyro_x_error += gyrox
+            gyro_y_error += gyroy
+            gyro_z_error += gyroz
+
+        accel_x_error = accel_x_error / iter_times
+        accel_y_error = accel_y_error / iter_times
+        gyro_x_error = gyro_x_error / iter_times
+        gyro_y_error = gyro_y_error / iter_times
+        gyro_z_error = gyro_z_error / iter_times
+
+        return (accel_x_error, accel_y_error, 0, gyro_x_error, gyro_y_error, gyro_z_error)
