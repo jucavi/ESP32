@@ -1647,33 +1647,3 @@ class MPU6050():
         self.set_latch_interrupt(True)
         self.set_i2c_bypass_enabled(True)
         self.set_data_ready_interrupt_enabled(True)
-
-    def imu_error(self):
-        """Calculate Accelerometer and Gyro data error."""
-        iter_times = 200
-        accel_x_error = 0
-        accel_y_error = 0
-        gyro_x_error = 0
-        gyro_y_error = 0
-        gyro_z_error = 0
-
-        for _ in range(iter_times):
-            accx, accy, accz = self.accel()
-
-            accel_x_error += ((atan((accy) / sqrt(pow((accx), 2) + pow((accz), 2))) * 180 / pi))
-            accel_y_error += ((atan(-1 * (accx) / sqrt(pow((accy), 2) + pow((accz), 2))) * 180 / pi))
-
-        for _ in range(iter_times):
-            gyrox, gyroy, gyroz = self.gyro()
-
-            gyro_x_error += gyrox
-            gyro_y_error += gyroy
-            gyro_z_error += gyroz
-
-        accel_x_error = accel_x_error / iter_times
-        accel_y_error = accel_y_error / iter_times
-        gyro_x_error = gyro_x_error / iter_times
-        gyro_y_error = gyro_y_error / iter_times
-        gyro_z_error = gyro_z_error / iter_times
-
-        return (accel_x_error, accel_y_error, 0, gyro_x_error, gyro_y_error, gyro_z_error)
