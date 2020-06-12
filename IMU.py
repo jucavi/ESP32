@@ -1642,3 +1642,4 @@ class MPU6050():
         # Set sample rate = gyroscope output rate/(1 + SMPLRT_DIV)
         self.set_sample_rate(0x04)
         self.set_full_scale_gyro_range(fs_gyro)
+        self.set_full_scale_accel_range(fs_accel)
